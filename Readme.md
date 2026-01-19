@@ -349,7 +349,7 @@ Use [Conventional Commits](https://www.conventionalcommits.org/):
 
 - Do not include secrets in pull requests
 - Report vulnerabilities privately (contact TBD)
-
+FIGMA[link](https://www.figma.com/design/wKinSiQpRv6TDfD3u5lCL7/OneQuestEarn-stellar_Earn?node-id=0-1&p=f&t=7ralfeRlDUA6Mrtz-0)
 ## Resources
 
 - [Stellar Developers](https://developers.stellar.org/)
