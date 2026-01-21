@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Contract
+        shell: bash
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+          targets: wasm32-unknown-unknown
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('Contract/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-registry-
+
+      - name: Cache target directory
+        uses: actions/cache@v4
+        with:
+          path: Contract/target
+          key: ${{ runner.os }}-cargo-target-${{ hashFiles('Contract/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-target-
+
+      - name: Build workspace
+        run: cargo build --workspace --release
+
+      - name: Run tests
+        run: cargo test --workspace
+
+      - name: Format check
+        run: cargo fmt --all -- --check
+
+      - name: Clippy lint
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+      - name: Build WASM
+        run: cargo build --workspace --release --target wasm32-unknown-unknown

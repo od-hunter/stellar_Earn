@@ -1,4 +1,27 @@
-﻿# Dependencies
+﻿# Rust / Cargo
+target/
+**/target/
+Cargo.lock
+**/*.rs.bk
+
+# WASM artifacts
+**/*.wasm
+.soroban/
+
+# Node / JS
+node_modules/
+**/node_modules/
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Dependencies
 node_modules/
 */node_modules/
 **/node_modules/
