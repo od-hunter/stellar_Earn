@@ -42,6 +42,28 @@ impl EarnQuestContract {
         submission::get_user_submissions(&env, user)
     }
 
+    /// Approve a submission by the designated verifier
+    /// Only the quest's assigned verifier can approve submissions
+    pub fn approve_submission(
+        env: Env,
+        quest_id: Symbol,
+        submitter: Address,
+        verifier: Address,
+    ) -> Result<(), Error> {
+        submission::approve_submission(&env, quest_id, submitter, verifier)
+    }
+
+    /// Reject a submission by the designated verifier
+    /// Only the quest's assigned verifier can reject submissions
+    pub fn reject_submission(
+        env: Env,
+        quest_id: Symbol,
+        submitter: Address,
+        verifier: Address,
+    ) -> Result<(), Error> {
+        submission::reject_submission(&env, quest_id, submitter, verifier)
+    }
+
     /// Register a new quest (placeholder implementation)
     pub fn register_quest(
         env: Env,

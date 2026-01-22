@@ -79,13 +79,107 @@ pub fn get_user_submissions(env: &Env, user: Address) -> Vec<Symbol> {
     storage::get_user_submissions(env, &user)
 }
 
+/// Approve a submission by the designated verifier
+/// Validates verifier authorization and submission status before approval
+pub fn approve_submission(
+    env: &Env,
+    quest_id: Symbol,
+    submitter: Address,
+    verifier: Address,
+) -> Result<(), Error> {
+    // Get the quest to verify the verifier is authorized
+    let quest = storage::get_quest(env, &quest_id)?;
+
+    // Check if the caller is the authorized verifier for this quest
+    if quest.verifier != verifier {
+        return Err(Error::UnauthorizedVerifier);
+    }
+
+    // Get the current submission
+    let mut submission = storage::get_submission(env, &quest_id, &submitter)?;
+
+    // Validate current status - can only approve pending submissions
+    match submission.status {
+        SubmissionStatus::Pending => {
+            // Update status to Approved
+            submission.status = SubmissionStatus::Approved;
+            storage::store_submission(env, &submission)?;
+
+            // Emit approval event
+            events::emit(
+                env,
+                Symbol::new(env, "submission_approved"),
+                (quest_id, submitter, verifier),
+            );
+
+            log!(env, "Submission approved for quest {} by user {} (verifier: {})",
+                 quest_id, submitter, verifier);
+
+            Ok(())
+        },
+        SubmissionStatus::Approved | SubmissionStatus::Rejected => {
+            Err(Error::SubmissionAlreadyProcessed)
+        },
+        SubmissionStatus::Paid => {
+            Err(Error::InvalidStatusTransition)
+        }
+    }
+}
+
+/// Reject a submission by the designated verifier
+/// Validates verifier authorization and submission status before rejection
+pub fn reject_submission(
+    env: &Env,
+    quest_id: Symbol,
+    submitter: Address,
+    verifier: Address,
+) -> Result<(), Error> {
+    // Get the quest to verify the verifier is authorized
+    let quest = storage::get_quest(env, &quest_id)?;
+
+    // Check if the caller is the authorized verifier for this quest
+    if quest.verifier != verifier {
+        return Err(Error::UnauthorizedVerifier);
+    }
+
+    // Get the current submission
+    let mut submission = storage::get_submission(env, &quest_id, &submitter)?;
+
+    // Validate current status - can only reject pending submissions
+    match submission.status {
+        SubmissionStatus::Pending => {
+            // Update status to Rejected
+            submission.status = SubmissionStatus::Rejected;
+            storage::store_submission(env, &submission)?;
+
+            // Emit rejection event
+            events::emit(
+                env,
+                Symbol::new(env, "submission_rejected"),
+                (quest_id, submitter, verifier),
+            );
+
+            log!(env, "Submission rejected for quest {} by user {} (verifier: {})",
+                 quest_id, submitter, verifier);
+
+            Ok(())
+        },
+        SubmissionStatus::Approved | SubmissionStatus::Rejected => {
+            Err(Error::SubmissionAlreadyProcessed)
+        },
+        SubmissionStatus::Paid => {
+            Err(Error::InvalidStatusTransition)
+        }
+    }
+}
+
 /// Get all submissions for a specific quest
 /// This is a helper function that could be useful for verifiers
 pub fn get_quest_submissions(env: &Env, quest_id: Symbol) -> Result<Vec<Submission>, Error> {
     // For now, this requires iterating through all submissions
     // In a production system, you might want to maintain a separate index
     // This is a simplified implementation
-    let mut submissions = Vec::new(env);
+    let mut submissions = Vec::new();
 
     // Note: This is not efficient for large numbers of submissions
     // A production implementation would need a proper indexing system

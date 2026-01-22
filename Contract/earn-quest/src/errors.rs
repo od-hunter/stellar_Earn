@@ -15,4 +15,7 @@ pub enum Error {
     DuplicateSubmission,
     QuestExpired,
     InvalidProofHash,
+    UnauthorizedVerifier,
+    InvalidStatusTransition,
+    SubmissionAlreadyProcessed,
 }
