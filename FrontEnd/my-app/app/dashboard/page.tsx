@@ -8,6 +8,7 @@ import {
   EarningsChart,
   BadgeDisplay,
 } from '@/components/dashboard';
+import { AppLayout } from '@/components/layout/AppLayout';
 
 export default function DashboardPage() {
   const {
@@ -23,7 +24,7 @@ export default function DashboardPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-black">
+      <AppLayout>
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center justify-center rounded-xl border border-red-200 bg-red-50 p-8 text-center dark:border-red-900 dark:bg-red-900/20">
             <div className="text-4xl mb-3">⚠️</div>
@@ -39,12 +40,12 @@ export default function DashboardPage() {
             </button>
           </div>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-black">
+    <AppLayout>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Header */}
         <header className="mb-8">
@@ -169,6 +170,6 @@ export default function DashboardPage() {
           </div>
         </footer>
       </div>
-    </div>
+    </AppLayout>
   );
 }
