@@ -1,0 +1,206 @@
+'use client';
+
+import type { Submission } from '@/lib/types/dashboard';
+
+interface RecentSubmissionsProps {
+  submissions: Submission[];
+  isLoading: boolean;
+}
+
+interface SubmissionRowProps {
+  submission: Submission;
+}
+
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) {
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    if (diffHours === 0) {
+      const diffMinutes = Math.floor(diffMs / (1000 * 60));
+      return `${diffMinutes} minutes ago`;
+    }
+    return `${diffHours} hours ago`;
+  } else if (diffDays === 1) {
+    return 'Yesterday';
+  } else if (diffDays < 7) {
+    return `${diffDays} days ago`;
+  }
+
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
+function SubmissionRowSkeleton() {
+  return (
+    <tr className="border-b border-zinc-100 dark:border-zinc-800">
+      <td className="py-3 pr-4">
+        <div className="h-5 w-40 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
+      </td>
+      <td className="py-3 pr-4">
+        <div className="h-5 w-20 animate-pulse rounded-full bg-zinc-200 dark:bg-zinc-700" />
+      </td>
+      <td className="py-3 pr-4">
+        <div className="h-5 w-16 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
+      </td>
+      <td className="py-3">
+        <div className="h-5 w-24 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
+      </td>
+    </tr>
+  );
+}
+
+function StatusBadge({ status }: { status: Submission['status'] }) {
+  const statusConfig = {
+    pending: {
+      label: 'Pending',
+      className: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+      icon: '⏳',
+    },
+    approved: {
+      label: 'Approved',
+      className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+      icon: '✓',
+    },
+    rejected: {
+      label: 'Rejected',
+      className: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+      icon: '✗',
+    },
+  };
+
+  const config = statusConfig[status];
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${config.className}`}
+    >
+      <span>{config.icon}</span>
+      {config.label}
+    </span>
+  );
+}
+
+function SubmissionRow({ submission }: SubmissionRowProps) {
+  return (
+    <tr className="border-b border-zinc-100 last:border-0 dark:border-zinc-800">
+      <td className="py-3 pr-4">
+        <div className="flex flex-col">
+          <span className="font-medium text-zinc-900 dark:text-zinc-50 truncate max-w-[200px]">
+            {submission.questTitle}
+          </span>
+          {submission.feedback && (
+            <span className="text-xs text-zinc-500 dark:text-zinc-400 truncate max-w-[200px]">
+              {submission.feedback}
+            </span>
+          )}
+        </div>
+      </td>
+      <td className="py-3 pr-4">
+        <StatusBadge status={submission.status} />
+      </td>
+      <td className="py-3 pr-4">
+        <span
+          className={`font-medium ${
+            submission.status === 'approved'
+              ? 'text-green-600 dark:text-green-400'
+              : 'text-zinc-500 dark:text-zinc-400'
+          }`}
+        >
+          {submission.status === 'approved' ? '+' : ''}{submission.reward} XLM
+        </span>
+      </td>
+      <td className="py-3 text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
+        {formatDate(submission.submittedAt)}
+      </td>
+    </tr>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center py-8 text-center">
+      <div className="text-4xl mb-3">📋</div>
+      <h4 className="font-medium text-zinc-900 dark:text-zinc-50">No submissions yet</h4>
+      <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+        Complete quests to see your submissions here
+      </p>
+    </div>
+  );
+}
+
+export function RecentSubmissions({ submissions, isLoading }: RecentSubmissionsProps) {
+  return (
+    <div className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+          Recent Submissions
+        </h3>
+        <button className="text-sm font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50 transition-colors">
+          View All
+        </button>
+      </div>
+
+      {isLoading ? (
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-zinc-200 dark:border-zinc-700">
+                <th className="pb-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  Quest
+                </th>
+                <th className="pb-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  Status
+                </th>
+                <th className="pb-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  Reward
+                </th>
+                <th className="pb-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  Date
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <SubmissionRowSkeleton />
+              <SubmissionRowSkeleton />
+              <SubmissionRowSkeleton />
+            </tbody>
+          </table>
+        </div>
+      ) : submissions.length === 0 ? (
+        <EmptyState />
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-zinc-200 dark:border-zinc-700">
+                <th className="pb-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  Quest
+                </th>
+                <th className="pb-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  Status
+                </th>
+                <th className="pb-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  Reward
+                </th>
+                <th className="pb-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  Date
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {submissions.map((submission) => (
+                <SubmissionRow key={submission.id} submission={submission} />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
