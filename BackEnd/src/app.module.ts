@@ -5,7 +5,9 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
+import { PayoutsModule } from './modules/payouts/payouts.module';
 import { RefreshToken } from './modules/auth/entities/refresh-token.entity';
+import { Payout } from './modules/payouts/entities/payout.entity';
 
 @Module({
   imports: [
@@ -18,7 +20,7 @@ import { RefreshToken } from './modules/auth/entities/refresh-token.entity';
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         url: configService.get<string>('DATABASE_URL'),
-        entities: [RefreshToken],
+        entities: [RefreshToken, Payout],
         synchronize: configService.get<string>('NODE_ENV') !== 'production',
         logging: configService.get<string>('NODE_ENV') === 'development',
       }),
@@ -35,6 +37,7 @@ import { RefreshToken } from './modules/auth/entities/refresh-token.entity';
       inject: [ConfigService],
     }),
     AuthModule,
+    PayoutsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
