@@ -1,6 +1,6 @@
-use soroban_sdk::{contracttype, Address, Env, Symbol, Vec};
-use crate::types::{Quest, Submission};
 use crate::errors::Error;
+use crate::types::{Quest, Submission};
+use soroban_sdk::{contracttype, Address, Env, Symbol, Vec};
 
 /// Storage keys for the contract
 #[contracttype]
@@ -63,11 +63,8 @@ pub fn submission_exists(env: &Env, quest_id: &Symbol, submitter: &Address) -> b
 pub fn add_user_submission(env: &Env, user: &Address, quest_id: &Symbol) -> Result<(), Error> {
     let key = DataKey::UserSubmissions(user.clone());
 
-    let mut user_submissions: Vec<Symbol> = env
-        .storage()
-        .instance()
-        .get(&key)
-        .unwrap_or(Vec::new(env));
+    let mut user_submissions: Vec<Symbol> =
+        env.storage().instance().get(&key).unwrap_or(Vec::new(env));
 
     // Check for duplicates
     if !user_submissions.contains(quest_id) {
@@ -81,8 +78,5 @@ pub fn add_user_submission(env: &Env, user: &Address, quest_id: &Symbol) -> Resu
 /// Get all quest IDs submitted by a user
 pub fn get_user_submissions(env: &Env, user: &Address) -> Vec<Symbol> {
     let key = DataKey::UserSubmissions(user.clone());
-    env.storage()
-        .instance()
-        .get(&key)
-        .unwrap_or(Vec::new(env))
+    env.storage().instance().get(&key).unwrap_or(Vec::new(env))
 }

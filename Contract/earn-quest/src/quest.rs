@@ -1,7 +1,7 @@
-use soroban_sdk::{Address, Env, Symbol};
 use crate::errors::Error;
 use crate::storage;
 use crate::types::{Quest, QuestStatus};
+use soroban_sdk::{Address, Env, Symbol};
 
 /// Register a new quest
 /// Only the creator can register a quest and must authorize the transaction

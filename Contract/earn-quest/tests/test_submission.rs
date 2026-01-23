@@ -1,11 +1,7 @@
 #![cfg(test)]
 
-use soroban_sdk::{
-    symbol_short,
-    testutils::Address as _,
-    Address, BytesN, Env,
-};
 use earn_quest::{EarnQuestContract, EarnQuestContractClient, SubmissionStatus};
+use soroban_sdk::{symbol_short, testutils::Address as _, Address, BytesN, Env};
 
 fn setup_env<'a>(env: &Env) -> (EarnQuestContractClient<'a>, Address, Address, Address) {
     let contract_id = env.register_contract(None, EarnQuestContract);
@@ -27,7 +23,14 @@ fn create_quest<'a>(
 ) {
     let quest_id = symbol_short!("quest1");
     let deadline = env.ledger().timestamp() + 86400;
-    client.register_quest(&quest_id, creator, reward_asset, &1000_i128, verifier, &deadline);
+    client.register_quest(
+        &quest_id,
+        creator,
+        reward_asset,
+        &1000_i128,
+        verifier,
+        &deadline,
+    );
 }
 
 #[test]
@@ -119,8 +122,22 @@ fn test_get_user_submissions() {
     let quest2_id = symbol_short!("quest2");
     let deadline = env.ledger().timestamp() + 86400;
 
-    client.register_quest(&quest1_id, &creator, &reward_asset, &1000_i128, &verifier, &deadline);
-    client.register_quest(&quest2_id, &creator, &reward_asset, &2000_i128, &verifier, &deadline);
+    client.register_quest(
+        &quest1_id,
+        &creator,
+        &reward_asset,
+        &1000_i128,
+        &verifier,
+        &deadline,
+    );
+    client.register_quest(
+        &quest2_id,
+        &creator,
+        &reward_asset,
+        &2000_i128,
+        &verifier,
+        &deadline,
+    );
 
     let submitter = Address::generate(&env);
     let proof_hash = BytesN::from_array(&env, &[1u8; 32]);

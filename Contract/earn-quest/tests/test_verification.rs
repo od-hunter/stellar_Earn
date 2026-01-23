@@ -1,11 +1,7 @@
 #![cfg(test)]
 
-use soroban_sdk::{
-    symbol_short,
-    testutils::Address as _,
-    Address, BytesN, Env,
-};
 use earn_quest::{EarnQuestContract, EarnQuestContractClient, SubmissionStatus};
+use soroban_sdk::{symbol_short, testutils::Address as _, Address, BytesN, Env};
 
 fn setup_env<'a>(env: &Env) -> (EarnQuestContractClient<'a>, Address, Address, Address) {
     let contract_id = env.register_contract(None, EarnQuestContract);
@@ -20,14 +16,27 @@ fn setup_env<'a>(env: &Env) -> (EarnQuestContractClient<'a>, Address, Address, A
 
 fn setup_quest_with_submission<'a>(
     env: &Env,
-) -> (EarnQuestContractClient<'a>, Address, Address, Address, Address) {
+) -> (
+    EarnQuestContractClient<'a>,
+    Address,
+    Address,
+    Address,
+    Address,
+) {
     let (client, creator, verifier, reward_asset) = setup_env(env);
 
     let quest_id = symbol_short!("quest1");
     let deadline = env.ledger().timestamp() + 86400;
 
     // Register quest
-    client.register_quest(&quest_id, &creator, &reward_asset, &1000_i128, &verifier, &deadline);
+    client.register_quest(
+        &quest_id,
+        &creator,
+        &reward_asset,
+        &1000_i128,
+        &verifier,
+        &deadline,
+    );
 
     // Create submitter and submit proof
     let submitter = Address::generate(env);
@@ -108,7 +117,14 @@ fn test_approve_nonexistent_submission_fails() {
     let deadline = env.ledger().timestamp() + 86400;
 
     // Register quest but don't submit
-    client.register_quest(&quest_id, &creator, &reward_asset, &1000_i128, &verifier, &deadline);
+    client.register_quest(
+        &quest_id,
+        &creator,
+        &reward_asset,
+        &1000_i128,
+        &verifier,
+        &deadline,
+    );
 
     // Try to approve non-existent submission
     let submitter = Address::generate(&env);

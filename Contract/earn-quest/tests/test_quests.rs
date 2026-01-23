@@ -1,11 +1,7 @@
 #![cfg(test)]
 
-use soroban_sdk::{
-    symbol_short,
-    testutils::Address as _,
-    Address, Env,
-};
 use earn_quest::{EarnQuestContract, EarnQuestContractClient, QuestStatus};
+use soroban_sdk::{symbol_short, testutils::Address as _, Address, Env};
 
 fn setup_env<'a>(env: &Env) -> (EarnQuestContractClient<'a>, Address, Address, Address) {
     let contract_id = env.register_contract(None, EarnQuestContract);
@@ -63,10 +59,24 @@ fn test_register_quest_duplicate_fails() {
     let deadline = env.ledger().timestamp() + 86400;
 
     // Register first quest
-    client.register_quest(&quest_id, &creator, &reward_asset, &1000_i128, &verifier, &deadline);
+    client.register_quest(
+        &quest_id,
+        &creator,
+        &reward_asset,
+        &1000_i128,
+        &verifier,
+        &deadline,
+    );
 
     // Try to register same quest again - should panic
-    let result = client.try_register_quest(&quest_id, &creator, &reward_asset, &1000_i128, &verifier, &deadline);
+    let result = client.try_register_quest(
+        &quest_id,
+        &creator,
+        &reward_asset,
+        &1000_i128,
+        &verifier,
+        &deadline,
+    );
     assert!(result.is_err());
 }
 
@@ -81,7 +91,14 @@ fn test_register_quest_invalid_reward_fails() {
     let deadline = env.ledger().timestamp() + 86400;
 
     // Zero reward - should fail
-    let result = client.try_register_quest(&quest_id, &creator, &reward_asset, &0_i128, &verifier, &deadline);
+    let result = client.try_register_quest(
+        &quest_id,
+        &creator,
+        &reward_asset,
+        &0_i128,
+        &verifier,
+        &deadline,
+    );
     assert!(result.is_err());
 }
 
@@ -96,7 +113,14 @@ fn test_pause_quest() {
     let deadline = env.ledger().timestamp() + 86400;
 
     // Register quest
-    client.register_quest(&quest_id, &creator, &reward_asset, &1000_i128, &verifier, &deadline);
+    client.register_quest(
+        &quest_id,
+        &creator,
+        &reward_asset,
+        &1000_i128,
+        &verifier,
+        &deadline,
+    );
 
     // Pause quest
     client.pause_quest(&quest_id, &creator);
@@ -117,7 +141,14 @@ fn test_resume_quest() {
     let deadline = env.ledger().timestamp() + 86400;
 
     // Register and pause quest
-    client.register_quest(&quest_id, &creator, &reward_asset, &1000_i128, &verifier, &deadline);
+    client.register_quest(
+        &quest_id,
+        &creator,
+        &reward_asset,
+        &1000_i128,
+        &verifier,
+        &deadline,
+    );
     client.pause_quest(&quest_id, &creator);
 
     // Resume quest
@@ -139,7 +170,14 @@ fn test_complete_quest() {
     let deadline = env.ledger().timestamp() + 86400;
 
     // Register quest
-    client.register_quest(&quest_id, &creator, &reward_asset, &1000_i128, &verifier, &deadline);
+    client.register_quest(
+        &quest_id,
+        &creator,
+        &reward_asset,
+        &1000_i128,
+        &verifier,
+        &deadline,
+    );
 
     // Complete quest
     client.complete_quest(&quest_id, &creator);
@@ -160,7 +198,14 @@ fn test_unauthorized_status_update() {
     let deadline = env.ledger().timestamp() + 86400;
 
     // Register quest
-    client.register_quest(&quest_id, &creator, &reward_asset, &1000_i128, &verifier, &deadline);
+    client.register_quest(
+        &quest_id,
+        &creator,
+        &reward_asset,
+        &1000_i128,
+        &verifier,
+        &deadline,
+    );
 
     // Try to pause with non-creator - should fail
     let other = Address::generate(&env);
@@ -179,7 +224,14 @@ fn test_invalid_status_transition() {
     let deadline = env.ledger().timestamp() + 86400;
 
     // Register and complete quest
-    client.register_quest(&quest_id, &creator, &reward_asset, &1000_i128, &verifier, &deadline);
+    client.register_quest(
+        &quest_id,
+        &creator,
+        &reward_asset,
+        &1000_i128,
+        &verifier,
+        &deadline,
+    );
     client.complete_quest(&quest_id, &creator);
 
     // Try to pause completed quest - should fail
@@ -198,7 +250,14 @@ fn test_is_quest_active() {
     let deadline = env.ledger().timestamp() + 86400;
 
     // Register quest
-    client.register_quest(&quest_id, &creator, &reward_asset, &1000_i128, &verifier, &deadline);
+    client.register_quest(
+        &quest_id,
+        &creator,
+        &reward_asset,
+        &1000_i128,
+        &verifier,
+        &deadline,
+    );
 
     // Should be active
     assert!(client.is_quest_active(&quest_id));
@@ -224,7 +283,14 @@ fn test_quest_exists() {
     assert!(!client.quest_exists(&quest_id));
 
     // Register quest
-    client.register_quest(&quest_id, &creator, &reward_asset, &1000_i128, &verifier, &deadline);
+    client.register_quest(
+        &quest_id,
+        &creator,
+        &reward_asset,
+        &1000_i128,
+        &verifier,
+        &deadline,
+    );
 
     // Should exist now
     assert!(client.quest_exists(&quest_id));
