@@ -7,7 +7,7 @@ extern crate earn_quest;
 use earn_quest::{EarnQuestContract, EarnQuestContractClient};
 use earn_quest::types::Badge;
 
-fn setup_contract_and_token(env: &Env) -> (Address, EarnQuestContractClient, Address, TokenClient) {
+fn setup_contract_and_token(env: &Env) -> (Address, EarnQuestContractClient<'_>, Address, TokenClient<'_>) {
     let contract_id = env.register_contract(None, EarnQuestContract);
     let client = EarnQuestContractClient::new(env, &contract_id);
     
@@ -22,6 +22,7 @@ fn setup_contract_and_token(env: &Env) -> (Address, EarnQuestContractClient, Add
     (contract_id, client, token_contract, token_client)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn complete_quest(
     client: &EarnQuestContractClient,
     env: &Env,
