@@ -1,19 +1,8 @@
 #[cfg(test)]
 mod test {
-    use soroban_sdk::{
-        testutils::Address as _,
-        Address,
-        Env,
-        Symbol,
-        symbol_short,
-        BytesN
-    };
+    use soroban_sdk::{symbol_short, testutils::Address as _, Address, BytesN, Env, Symbol};
 
-    use crate::{
-        EarnQuestContract,
-        EarnQuestContractClient,
-        types::QuestStatus
-    };
+    use crate::{types::QuestStatus, EarnQuestContract, EarnQuestContractClient};
 
     #[test]
     fn test_register_quest_with_participant_limit() {

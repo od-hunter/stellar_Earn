@@ -1,7 +1,11 @@
 #![cfg(test)]
 
 use earn_quest::{EarnQuestContract, EarnQuestContractClient, QuestStatus};
-use soroban_sdk::{symbol_short, testutils::{Address as _, Ledger}, Address, BytesN, Env};
+use soroban_sdk::{
+    symbol_short,
+    testutils::{Address as _, Ledger},
+    Address, BytesN, Env,
+};
 
 fn setup_env<'a>(env: &Env) -> (EarnQuestContractClient<'a>, Address, Address, Address) {
     let contract_id = env.register_contract(None, EarnQuestContract);

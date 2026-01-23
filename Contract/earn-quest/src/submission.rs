@@ -42,10 +42,8 @@ pub fn submit_proof(
     storage::set_submission(env, &submission);
 
     // Emit event
-    env.events().publish(
-        (Symbol::new(env, "proof_sub"), quest_id),
-        submitter,
-    );
+    env.events()
+        .publish((Symbol::new(env, "proof_sub"), quest_id), submitter);
 
     Ok(())
 }
@@ -69,8 +67,8 @@ pub fn approve_submission(
     }
 
     // Get submission
-    let mut submission = storage::get_submission(env, quest_id, submitter)
-        .ok_or(Error::SubmissionNotFound)?;
+    let mut submission =
+        storage::get_submission(env, quest_id, submitter).ok_or(Error::SubmissionNotFound)?;
 
     // Check submission is pending
     if submission.status != SubmissionStatus::Pending {
@@ -121,8 +119,8 @@ pub fn reject_submission(
     }
 
     // Get submission
-    let mut submission = storage::get_submission(env, quest_id, submitter)
-        .ok_or(Error::SubmissionNotFound)?;
+    let mut submission =
+        storage::get_submission(env, quest_id, submitter).ok_or(Error::SubmissionNotFound)?;
 
     // Check submission is pending
     if submission.status != SubmissionStatus::Pending {

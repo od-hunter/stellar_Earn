@@ -55,7 +55,8 @@ pub fn create_quest(
     storage::set_quest(env, &quest);
 
     // Emit event
-    env.events().publish((Symbol::new(env, "quest_reg"), id), quest);
+    env.events()
+        .publish((Symbol::new(env, "quest_reg"), id), quest);
 
     Ok(())
 }
