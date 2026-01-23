@@ -2,12 +2,13 @@
 
 mod payout;
 mod storage;
-mod types;
+pub mod types;
 mod errors;
-mod events; // Import the events module
+mod events;
+mod reputation;
 
 use soroban_sdk::{contract, contractimpl, Address, Env, Symbol, BytesN};
-use crate::types::{Quest, QuestStatus, Submission, SubmissionStatus};
+use crate::types::{Quest, QuestStatus, Submission, SubmissionStatus, UserStats, Badge};
 use crate::errors::Error;
 
 #[contract]
@@ -162,12 +163,30 @@ impl EarnQuestContract {
         // EMIT EVENT: RewardClaimed
         events::reward_claimed(
             &env, 
-            quest_id, 
-            submitter, 
+            quest_id.clone(), 
+            submitter.clone(), 
             quest.reward_asset, 
             quest.reward_amount
         );
 
+        // 6. Award XP for quest completion
+        reputation::award_xp(&env, &submitter, 100)?;
+
         Ok(())
+    }
+
+    /// Get user reputation stats
+    pub fn get_user_stats(env: Env, user: Address) -> UserStats {
+        reputation::get_user_stats(&env, &user)
+    }
+
+    /// Grant a badge to a user (admin only)
+    pub fn grant_badge(
+        env: Env,
+        admin: Address,
+        user: Address,
+        badge: Badge,
+    ) -> Result<(), Error> {
+        reputation::grant_badge(&env, &admin, &user, badge)
     }
 }

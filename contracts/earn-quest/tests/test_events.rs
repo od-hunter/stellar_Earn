@@ -2,7 +2,7 @@
 
 extern crate earn_quest;
 use earn_quest::{EarnQuestContract, EarnQuestContractClient};
-use soroban_sdk::{Address, BytesN, Env, IntoVal, Symbol, Val, Vec, symbol_short, testutils::{Address as _, Events}};
+use soroban_sdk::{Address, BytesN, Env, IntoVal, Symbol, symbol_short, testutils::{Address as _, Events}};
 use soroban_sdk::token::StellarAssetClient;
 
 #[test]
@@ -99,7 +99,11 @@ fn test_full_quest_lifecycle_events() {
     client.claim_reward(&quest_id, &user);
 
     let events = env.events().all();
-    let (_, topics, data) = events.last().unwrap();
+    
+    // After claim_reward, we expect 2 events: reward_claimed and xp_awarded
+    // Get the second-to-last event (reward_claimed)
+    let event_count = events.len();
+    let (_, topics, data) = events.get(event_count - 2).unwrap();
 
     // Topics: [EventName, QuestID, Submitter]
     let t_name: Symbol = topics.get(0).unwrap().into_val(&env);
@@ -114,4 +118,18 @@ fn test_full_quest_lifecycle_events() {
     let (claimed_asset, claimed_amount): (Address, i128) = data.into_val(&env);
     assert_eq!(claimed_asset, token_address);
     assert_eq!(claimed_amount, reward_amount);
+    
+    // Verify the XP awarded event (last event)
+    let (_, topics, data) = events.last().unwrap();
+    let t_name: Symbol = topics.get(0).unwrap().into_val(&env);
+    let t_user: Address = topics.get(1).unwrap().into_val(&env);
+    
+    assert_eq!(t_name, symbol_short!("xp_award"));
+    assert_eq!(t_user, user);
+    
+    // Verify XP data: (xp_amount, total_xp, level)
+    let (xp_amount, total_xp, level): (u64, u64, u32) = data.into_val(&env);
+    assert_eq!(xp_amount, 100);
+    assert_eq!(total_xp, 100);
+    assert_eq!(level, 1);
 }
