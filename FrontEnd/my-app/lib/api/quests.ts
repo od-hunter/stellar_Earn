@@ -42,5 +42,17 @@ export async function getQuestById(id: string): Promise<Quest> {
   // if (!response.ok) throw new Error('Failed to fetch quest');
   // return response.json();
 
-  throw new Error('Not implemented - use mock data');
+  // For now, use mock data
+  const { getMockQuests } = await import('@/lib/mock/quests');
+  const quests = getMockQuests();
+  const quest = quests.find((q) => q.id === id);
+  
+  if (!quest) {
+    throw new Error('Quest not found');
+  }
+
+  // Simulate network delay
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  
+  return quest;
 }

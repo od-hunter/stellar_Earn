@@ -1,507 +1,229 @@
 'use client';
 
-import { useCallback } from 'react';
-import { useSubmission, type SubmissionStep } from '@/lib/hooks/useSubmission';
-import type { ProofType } from '@/lib/validation/submission';
+import { useState } from 'react';
 import { FileUpload } from '@/components/ui/FileUpload';
-import { ProofPreview } from '@/components/quest/ProofPreview';
-import { SubmissionSuccessModal } from '@/components/ui/Modal';
 
 interface SubmissionFormProps {
   questId: string;
   questTitle: string;
-  onClose?: () => void;
-  onSuccess?: () => void;
+  isExpired?: boolean;
+  isFull?: boolean;
+  onSubmit?: (data: { questId: string; proof: File | null; notes: string }) => void;
 }
-
-const proofTypeOptions: { type: ProofType; label: string; description: string; icon: JSX.Element }[] = [
-  {
-    type: 'link',
-    label: 'Link / URL',
-    description: 'Submit a link to your work (GitHub, deployed site, etc.)',
-    icon: (
-      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-      </svg>
-    ),
-  },
-  {
-    type: 'file',
-    label: 'File Upload',
-    description: 'Upload screenshots, documents, or other files',
-    icon: (
-      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-      </svg>
-    ),
-  },
-  {
-    type: 'text',
-    label: 'Text Description',
-    description: 'Describe your work or provide detailed explanation',
-    icon: (
-      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
-      </svg>
-    ),
-  },
-];
-
-const stepTitles: Record<SubmissionStep, string> = {
-  type: 'Select Proof Type',
-  proof: 'Provide Your Proof',
-  preview: 'Review & Submit',
-  submitting: 'Submitting...',
-  success: 'Submission Complete',
-  error: 'Submission Error',
-};
 
 export function SubmissionForm({
   questId,
   questTitle,
-  onClose,
-  onSuccess,
+  isExpired = false,
+  isFull = false,
+  onSubmit,
 }: SubmissionFormProps) {
-  const {
-    formData,
-    updateField,
-    currentStep,
-    goToNextStep,
-    goToPreviousStep,
-    canGoNext,
-    canGoBack,
-    errors,
-    getFieldError,
-    isSubmitting,
-    submitProgress,
-    submit,
-    submissionError,
-    reset,
-    isWalletConnected,
-  } = useSubmission({
-    questId,
-    questTitle,
-    onSuccess: () => {
-      onSuccess?.();
-    },
-  });
+  const [proof, setProof] = useState<File | null>(null);
+  const [notes, setNotes] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
-  const handleProofTypeSelect = useCallback(
-    (type: ProofType) => {
-      updateField('proofType', type);
-      // Clear previous proof data when changing type
-      updateField('link', '');
-      updateField('text', '');
-      updateField('file', null);
-    },
-    [updateField]
-  );
+  const canStart = !isExpired && !isFull;
 
-  const handleSuccessClose = useCallback(() => {
-    reset();
-    onClose?.();
-  }, [reset, onClose]);
-
-  // Render step indicator
-  const renderStepIndicator = () => {
-    const steps = ['type', 'proof', 'preview'] as const;
-    const currentIndex = steps.indexOf(currentStep as typeof steps[number]);
-
-    return (
-      <div className="mb-6 flex items-center justify-center gap-2">
-        {steps.map((step, index) => (
-          <div key={step} className="flex items-center">
-            <div
-              className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-colors ${
-                index < currentIndex
-                  ? 'bg-green-500 text-white'
-                  : index === currentIndex
-                  ? 'bg-[#089ec3] text-white'
-                  : 'bg-zinc-200 text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400'
-              }`}
-            >
-              {index < currentIndex ? (
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              ) : (
-                index + 1
-              )}
-            </div>
-            {index < steps.length - 1 && (
-              <div
-                className={`mx-2 h-0.5 w-8 transition-colors ${
-                  index < currentIndex ? 'bg-green-500' : 'bg-zinc-200 dark:bg-zinc-700'
-                }`}
-              />
-            )}
-          </div>
-        ))}
-      </div>
-    );
+  const handleStartQuest = () => {
+    setHasStarted(true);
   };
 
-  // Render proof type selection step
-  const renderTypeStep = () => (
-    <div className="space-y-4">
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
-        How would you like to prove you completed this quest?
-      </p>
-      <div className="space-y-3">
-        {proofTypeOptions.map((option) => (
-          <button
-            key={option.type}
-            type="button"
-            onClick={() => handleProofTypeSelect(option.type)}
-            className={`flex w-full items-start gap-4 rounded-lg border-2 p-4 text-left transition-colors ${
-              formData.proofType === option.type
-                ? 'border-[#089ec3] bg-[#089ec3]/5'
-                : 'border-zinc-200 hover:border-zinc-300 dark:border-zinc-700 dark:hover:border-zinc-600'
-            }`}
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!proof) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    // Simulate submission delay
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    if (onSubmit) {
+      onSubmit({ questId, proof, notes });
+    }
+
+    setShowSuccess(true);
+    setIsSubmitting(false);
+
+    // Reset form after 3 seconds
+    setTimeout(() => {
+      setShowSuccess(false);
+      setHasStarted(false);
+      setProof(null);
+      setNotes('');
+    }, 3000);
+  };
+
+  if (showSuccess) {
+    return (
+      <div className="rounded-lg border border-green-200 bg-green-50 p-8 text-center dark:border-green-900 dark:bg-green-900/10">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+          <svg
+            className="h-8 w-8 text-green-600 dark:text-green-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
           >
-            <div
-              className={`rounded-lg p-2 ${
-                formData.proofType === option.type
-                  ? 'bg-[#089ec3] text-white'
-                  : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
-              }`}
-            >
-              {option.icon}
-            </div>
-            <div className="flex-1">
-              <p className="font-medium text-zinc-900 dark:text-zinc-50">{option.label}</p>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">{option.description}</p>
-            </div>
-            {formData.proofType === option.type && (
-              <svg
-                className="h-6 w-6 flex-shrink-0 text-[#089ec3]"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            )}
-          </button>
-        ))}
-      </div>
-      {getFieldError('proofType') && (
-        <p className="text-sm text-red-600 dark:text-red-400">{getFieldError('proofType')}</p>
-      )}
-    </div>
-  );
-
-  // Render proof input step
-  const renderProofStep = () => (
-    <div className="space-y-4">
-      {formData.proofType === 'link' && (
-        <div>
-          <label
-            htmlFor="proof-link"
-            className="mb-2 block text-sm font-medium text-zinc-900 dark:text-zinc-50"
-          >
-            Proof URL
-          </label>
-          <input
-            id="proof-link"
-            type="url"
-            value={formData.link || ''}
-            onChange={(e) => updateField('link', e.target.value)}
-            placeholder="https://github.com/username/repo"
-            className={`w-full rounded-lg border px-4 py-2 text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#089ec3] dark:bg-zinc-800 dark:text-zinc-50 dark:placeholder-zinc-500 ${
-              getFieldError('link')
-                ? 'border-red-300 dark:border-red-800'
-                : 'border-zinc-300 dark:border-zinc-700'
-            }`}
-          />
-          {getFieldError('link') && (
-            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{getFieldError('link')}</p>
-          )}
-          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-500">
-            Provide a link to your completed work (GitHub repo, deployed site, etc.)
-          </p>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
         </div>
-      )}
-
-      {formData.proofType === 'file' && (
-        <div>
-          <label className="mb-2 block text-sm font-medium text-zinc-900 dark:text-zinc-50">
-            Upload Proof
-          </label>
-          <FileUpload
-            selectedFile={formData.file || null}
-            onFileSelect={(file) => updateField('file', file)}
-            error={getFieldError('file')}
-          />
-        </div>
-      )}
-
-      {formData.proofType === 'text' && (
-        <div>
-          <label
-            htmlFor="proof-text"
-            className="mb-2 block text-sm font-medium text-zinc-900 dark:text-zinc-50"
-          >
-            Proof Description
-          </label>
-          <textarea
-            id="proof-text"
-            value={formData.text || ''}
-            onChange={(e) => updateField('text', e.target.value)}
-            placeholder="Describe your completed work in detail..."
-            rows={6}
-            className={`w-full rounded-lg border px-4 py-2 text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#089ec3] dark:bg-zinc-800 dark:text-zinc-50 dark:placeholder-zinc-500 ${
-              getFieldError('text')
-                ? 'border-red-300 dark:border-red-800'
-                : 'border-zinc-300 dark:border-zinc-700'
-            }`}
-          />
-          {getFieldError('text') && (
-            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{getFieldError('text')}</p>
-          )}
-          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-500">
-            {formData.text?.length || 0}/5000 characters (minimum 10)
-          </p>
-        </div>
-      )}
-
-      {/* Additional notes (optional) */}
-      <div className="border-t border-zinc-200 pt-4 dark:border-zinc-700">
-        <label
-          htmlFor="additional-notes"
-          className="mb-2 block text-sm font-medium text-zinc-900 dark:text-zinc-50"
-        >
-          Additional Notes (Optional)
-        </label>
-        <textarea
-          id="additional-notes"
-          value={formData.additionalNotes || ''}
-          onChange={(e) => updateField('additionalNotes', e.target.value)}
-          placeholder="Any additional context or notes for the reviewer..."
-          rows={3}
-          className="w-full rounded-lg border border-zinc-300 px-4 py-2 text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#089ec3] dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50 dark:placeholder-zinc-500"
-        />
-        {getFieldError('additionalNotes') && (
-          <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-            {getFieldError('additionalNotes')}
-          </p>
-        )}
-      </div>
-    </div>
-  );
-
-  // Render preview step
-  const renderPreviewStep = () => (
-    <div className="space-y-4">
-      <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
-        <h4 className="mb-2 font-medium text-zinc-900 dark:text-zinc-50">Quest</h4>
-        <p className="text-zinc-600 dark:text-zinc-400">{questTitle}</p>
-      </div>
-
-      <ProofPreview
-        proofType={formData.proofType}
-        link={formData.link}
-        text={formData.text}
-        file={formData.file}
-        additionalNotes={formData.additionalNotes}
-      />
-
-      {!isWalletConnected && (
-        <div className="rounded-lg border border-orange-200 bg-orange-50 p-4 dark:border-orange-800 dark:bg-orange-900/20">
-          <div className="flex items-start gap-3">
-            <svg
-              className="h-5 w-5 flex-shrink-0 text-orange-500"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              />
-            </svg>
-            <div>
-              <p className="font-medium text-orange-800 dark:text-orange-200">
-                Wallet not connected
-              </p>
-              <p className="text-sm text-orange-600 dark:text-orange-300">
-                Please connect your wallet to submit your proof.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {errors.length > 0 && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
-          <p className="mb-2 font-medium text-red-800 dark:text-red-200">
-            Please fix the following errors:
-          </p>
-          <ul className="list-inside list-disc text-sm text-red-600 dark:text-red-300">
-            {errors.map((error, index) => (
-              <li key={index}>{error.message}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
-  );
-
-  // Render submitting step
-  const renderSubmittingStep = () => (
-    <div className="flex flex-col items-center justify-center py-8">
-      <div className="mb-4 h-16 w-16 animate-spin rounded-full border-4 border-zinc-200 border-t-[#089ec3]" />
-      <p className="mb-2 text-lg font-medium text-zinc-900 dark:text-zinc-50">
-        Submitting your proof...
-      </p>
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">Please wait</p>
-      <div className="mt-4 w-full max-w-xs">
-        <div className="h-2 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
-          <div
-            className="h-full bg-[#089ec3] transition-all duration-300"
-            style={{ width: `${submitProgress}%` }}
-          />
-        </div>
-        <p className="mt-1 text-center text-xs text-zinc-500 dark:text-zinc-400">
-          {submitProgress}%
+        <h3 className="mb-2 text-xl font-semibold text-green-900 dark:text-green-100">
+          Interest Registered!
+        </h3>
+        <p className="text-sm text-green-700 dark:text-green-300">
+          You've marked your interest in this quest. Submission functionality coming soon!
         </p>
       </div>
-    </div>
-  );
+    );
+  }
 
-  // Render error step
-  const renderErrorStep = () => (
-    <div className="flex flex-col items-center justify-center py-8">
-      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
-        <svg
-          className="h-8 w-8 text-red-600 dark:text-red-400"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M6 18L18 6M6 6l12 12"
-          />
-        </svg>
-      </div>
-      <p className="mb-2 text-lg font-medium text-zinc-900 dark:text-zinc-50">Submission Failed</p>
-      <p className="mb-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
-        {submissionError?.message || 'An unexpected error occurred'}
-      </p>
-      <button
-        onClick={() => reset()}
-        className="rounded-lg bg-[#089ec3] px-4 py-2 font-medium text-white hover:bg-[#0ab8d4] focus:outline-none focus:ring-2 focus:ring-[#089ec3] focus:ring-offset-2 dark:focus:ring-offset-zinc-900"
-      >
-        Try Again
-      </button>
-    </div>
-  );
-
-  // Render current step content
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 'type':
-        return renderTypeStep();
-      case 'proof':
-        return renderProofStep();
-      case 'preview':
-        return renderPreviewStep();
-      case 'submitting':
-        return renderSubmittingStep();
-      case 'error':
-        return renderErrorStep();
-      case 'success':
-        return null; // Handled by modal
-      default:
-        return null;
-    }
-  };
-
-  // Don't render form content during success (modal handles it)
-  if (currentStep === 'success') {
+  if (!hasStarted) {
     return (
-      <SubmissionSuccessModal
-        isOpen={true}
-        onClose={handleSuccessClose}
-        questTitle={questTitle}
-      />
+      <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+        <h3 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+          Ready to Start?
+        </h3>
+        <p className="mb-6 text-sm text-zinc-600 dark:text-zinc-400">
+          Click the button below to indicate your interest in this quest. You'll be able to submit
+          your work once you've completed the requirements.
+        </p>
+
+        {isExpired && (
+          <div className="mb-4 rounded-lg bg-red-50 p-4 dark:bg-red-900/10">
+            <p className="text-sm text-red-700 dark:text-red-300">
+              This quest has expired and is no longer accepting new participants.
+            </p>
+          </div>
+        )}
+
+        {isFull && (
+          <div className="mb-4 rounded-lg bg-orange-50 p-4 dark:bg-orange-900/10">
+            <p className="text-sm text-orange-700 dark:text-orange-300">
+              This quest has reached its maximum number of participants.
+            </p>
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={handleStartQuest}
+          disabled={!canStart}
+          className="w-full rounded-lg bg-[#089ec3] px-6 py-3 font-medium text-white transition-colors hover:bg-[#0ab8d4] focus:outline-none focus:ring-2 focus:ring-[#089ec3] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:focus:ring-offset-zinc-900"
+        >
+          {isExpired ? 'Quest Expired' : isFull ? 'Quest Full' : 'Start Quest'}
+        </button>
+      </div>
     );
   }
 
   return (
-    <div className="w-full max-w-lg">
-      {/* Header */}
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">Submit Proof</h2>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">{questTitle}</p>
-      </div>
-
-      {/* Step indicator */}
-      {!['submitting', 'error'].includes(currentStep) && renderStepIndicator()}
-
-      {/* Step title */}
-      <h3 className="mb-4 text-lg font-medium text-zinc-900 dark:text-zinc-50">
-        {stepTitles[currentStep]}
+    <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+      <h3 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+        Submit Your Work
       </h3>
 
-      {/* Step content */}
-      {renderStepContent()}
-
-      {/* Navigation buttons */}
-      {!['submitting', 'error'].includes(currentStep) && (
-        <div className="mt-6 flex gap-3">
-          {canGoBack && (
-            <button
-              type="button"
-              onClick={goToPreviousStep}
-              className="flex-1 rounded-lg border border-zinc-300 px-4 py-2 font-medium text-zinc-700 hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-[#089ec3] dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800"
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Quest Info */}
+        <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-900/10">
+          <div className="flex items-start gap-2">
+            <svg
+              className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600 dark:text-blue-400"
+              fill="currentColor"
+              viewBox="0 0 20 20"
             >
-              Back
-            </button>
-          )}
-
-          {currentStep === 'preview' ? (
-            <button
-              type="button"
-              onClick={submit}
-              disabled={isSubmitting || !isWalletConnected}
-              className="flex-1 rounded-lg bg-[#089ec3] px-4 py-2 font-medium text-white hover:bg-[#0ab8d4] focus:outline-none focus:ring-2 focus:ring-[#089ec3] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:focus:ring-offset-zinc-900"
-            >
-              Submit Proof
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={goToNextStep}
-              disabled={!canGoNext}
-              className="flex-1 rounded-lg bg-[#089ec3] px-4 py-2 font-medium text-white hover:bg-[#0ab8d4] focus:outline-none focus:ring-2 focus:ring-[#089ec3] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:focus:ring-offset-zinc-900"
-            >
-              Continue
-            </button>
-          )}
+              <path
+                fillRule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                Quest: {questTitle}
+              </p>
+              <p className="mt-1 text-xs text-blue-700 dark:text-blue-300">
+                Upload proof of your completed work and add any relevant notes
+              </p>
+            </div>
+          </div>
         </div>
-      )}
 
-      {/* Cancel button */}
-      {onClose && !['submitting', 'success'].includes(currentStep) && (
-        <button
-          type="button"
-          onClick={onClose}
-          className="mt-3 w-full text-center text-sm text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300"
-        >
-          Cancel
-        </button>
-      )}
+        {/* File Upload */}
+        <div>
+          <label className="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            Proof of Work <span className="text-red-500">*</span>
+          </label>
+          <FileUpload onFileSelect={setProof} selectedFile={proof} disabled={isSubmitting} />
+          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+            Upload screenshots, documents, or other proof of your completed work
+          </p>
+        </div>
+
+        {/* Notes */}
+        <div>
+          <label
+            htmlFor="notes"
+            className="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+          >
+            Additional Notes (Optional)
+          </label>
+          <textarea
+            id="notes"
+            rows={4}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            disabled={isSubmitting}
+            className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-[#089ec3] focus:outline-none focus:ring-2 focus:ring-[#089ec3] disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50 dark:placeholder-zinc-500"
+            placeholder="Provide any additional context or notes about your submission..."
+          />
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              setHasStarted(false);
+              setProof(null);
+              setNotes('');
+            }}
+            disabled={isSubmitting}
+            className="flex-1 rounded-lg border border-zinc-300 bg-white px-6 py-3 font-medium text-zinc-700 transition-colors hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:focus:ring-offset-zinc-900"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={!proof || isSubmitting}
+            className="flex-1 rounded-lg bg-[#089ec3] px-6 py-3 font-medium text-white transition-colors hover:bg-[#0ab8d4] focus:outline-none focus:ring-2 focus:ring-[#089ec3] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:focus:ring-offset-zinc-900"
+          >
+            {isSubmitting ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg
+                  className="h-5 w-5 animate-spin"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+                Submitting...
+              </span>
+            ) : (
+              'Submit Work'
+            )}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

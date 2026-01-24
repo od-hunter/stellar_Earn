@@ -22,6 +22,9 @@ export interface Quest {
   xpReward: number;
   status: QuestStatus;
   deadline?: string;
+  requirements?: string[];
+  maxParticipants?: number;
+  currentParticipants?: number;
   createdAt: string;
   updatedAt: string;
 }

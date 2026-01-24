@@ -133,8 +133,7 @@ function QuestsContent() {
   };
 
   const handleQuestClick = (quest: Quest) => {
-    // TODO: Navigate to quest detail page
-    console.log("View quest:", quest.id);
+    router.push(`/quests/${quest.id}`);
   };
 
   return (
