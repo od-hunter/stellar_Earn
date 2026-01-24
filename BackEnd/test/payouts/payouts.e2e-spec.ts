@@ -5,7 +5,11 @@ import { App } from 'supertest/types';
 import { AppModule } from '../../src/app.module';
 import { Keypair } from 'stellar-sdk';
 import { DataSource } from 'typeorm';
-import { Payout, PayoutStatus, PayoutType } from '../../src/modules/payouts/entities/payout.entity';
+import {
+  Payout,
+  PayoutStatus,
+  PayoutType,
+} from '../../src/modules/payouts/entities/payout.entity';
 
 describe('Payouts (e2e)', () => {
   let app: INestApplication<App>;
@@ -45,7 +49,9 @@ describe('Payouts (e2e)', () => {
       .send({ stellarAddress });
 
     const challenge = challengeResponse.body.challenge;
-    const signature = testKeypair.sign(Buffer.from(challenge, 'utf8')).toString('base64');
+    const signature = testKeypair
+      .sign(Buffer.from(challenge, 'utf8'))
+      .toString('base64');
 
     const loginResponse = await request(app.getHttpServer())
       .post('/auth/login')
@@ -76,7 +82,7 @@ describe('Payouts (e2e)', () => {
       await payoutRepository.delete({ stellarAddress });
     }
     // Wait for any pending async tasks to finish
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
     await app.close();
   });
 
@@ -91,7 +97,9 @@ describe('Payouts (e2e)', () => {
         .send({ stellarAddress: newAddress });
 
       const challenge = challengeResponse.body.challenge;
-      const signature = newKeypair.sign(Buffer.from(challenge, 'utf8')).toString('base64');
+      const signature = newKeypair
+        .sign(Buffer.from(challenge, 'utf8'))
+        .toString('base64');
 
       const loginResponse = await request(app.getHttpServer())
         .post('/auth/login')
@@ -148,9 +156,7 @@ describe('Payouts (e2e)', () => {
     });
 
     it('should reject unauthenticated request', () => {
-      return request(app.getHttpServer())
-        .get('/payouts/history')
-        .expect(401);
+      return request(app.getHttpServer()).get('/payouts/history').expect(401);
     });
   });
 

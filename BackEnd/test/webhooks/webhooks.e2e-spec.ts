@@ -36,7 +36,11 @@ describe('WebhooksController (e2e)', () => {
         commits: [{ id: 'abc123' }],
       };
 
-      const signature = generateWebhookSignature(payload, githubSecret, 'github');
+      const signature = generateWebhookSignature(
+        payload,
+        githubSecret,
+        'github',
+      );
 
       return request(app.getHttpServer())
         .post('/webhooks/github')
@@ -84,7 +88,11 @@ describe('WebhooksController (e2e)', () => {
         },
       };
 
-      const signature = generateWebhookSignature(payload, githubSecret, 'github');
+      const signature = generateWebhookSignature(
+        payload,
+        githubSecret,
+        'github',
+      );
 
       return request(app.getHttpServer())
         .post('/webhooks/github')
@@ -115,7 +123,11 @@ describe('WebhooksController (e2e)', () => {
         },
       };
 
-      const signature = generateWebhookSignature(payload, githubSecret, 'github');
+      const signature = generateWebhookSignature(
+        payload,
+        githubSecret,
+        'github',
+      );
 
       return request(app.getHttpServer())
         .post('/webhooks/github')
@@ -173,7 +185,7 @@ describe('WebhooksController (e2e)', () => {
 
     it('should reject invalid API signature', () => {
       const payload = { test: 'data' };
-      
+
       return request(app.getHttpServer())
         .post('/webhooks/api-verify')
         .set('X-Event-Type', 'test_event')
@@ -263,7 +275,7 @@ describe('WebhooksController (e2e)', () => {
     it('should generate and verify GitHub signatures correctly', () => {
       const payload = { test: 'data' };
       const secret = 'test_secret';
-      
+
       const signature = generateWebhookSignature(payload, secret, 'github');
       expect(signature).toMatch(/^sha256=[a-f0-9]{64}$/);
     });
@@ -271,14 +283,16 @@ describe('WebhooksController (e2e)', () => {
     it('should generate and verify API signatures correctly', () => {
       const payload = { test: 'data' };
       const secret = 'test_secret';
-      
+
       const signature = generateWebhookSignature(payload, secret, 'api');
       expect(signature).toMatch(/^hmac-sha256=[a-f0-9]{64}$/);
     });
 
     it('should validate webhook secrets', () => {
-      const { validateWebhookSecret } = require('../../src/modules/webhooks/utils/signature');
-      
+      const {
+        validateWebhookSecret,
+      } = require('../../src/modules/webhooks/utils/signature');
+
       expect(validateWebhookSecret('short')).toBe(false);
       expect(validateWebhookSecret('this_is_a_valid_secret_key')).toBe(true);
       expect(validateWebhookSecret('')).toBe(false);
