@@ -5,7 +5,6 @@ import { App } from 'supertest/types';
 import { AppModule } from '../../src/app.module';
 import { Keypair } from 'stellar-sdk';
 import { DataSource } from 'typeorm';
-// import DataSource from '../../src/config/ormconfig';
 import {
   Payout,
   PayoutStatus,
