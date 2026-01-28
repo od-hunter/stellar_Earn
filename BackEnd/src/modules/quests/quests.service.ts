@@ -15,12 +15,15 @@ import {
   QuestResponseDto,
   PaginatedQuestsResponseDto,
 } from './dto/quest-response.dto';
+import { CacheService } from '../cache/cache.service';
+import { CACHE_KEYS, CACHE_TTL } from '../../config/cache.config';
 
 @Injectable()
 export class QuestsService {
   constructor(
     @InjectRepository(Quest)
     private readonly questRepository: Repository<Quest>,
+    private readonly cacheService: CacheService,
   ) {}
 
   async create(
@@ -39,6 +42,10 @@ export class QuestsService {
     });
 
     const savedQuest = await this.questRepository.save(quest);
+    
+    // Invalidate quest list cache
+    await this.cacheService.deletePattern(CACHE_KEYS.QUESTS);
+
     return QuestResponseDto.fromEntity(savedQuest);
   }
 
@@ -53,6 +60,25 @@ export class QuestsService {
       sortBy = 'createdAt',
       sortOrder = 'DESC',
     } = queryDto;
+
+    // Generate cache key based on query parameters
+    const cacheKey = `${CACHE_KEYS.QUESTS}:${JSON.stringify({
+      status,
+      creatorAddress,
+      minReward,
+      maxReward,
+      page,
+      limit,
+      sortBy,
+      sortOrder,
+    })}`;
+
+    // Try to get from cache first
+    const cached =
+      await this.cacheService.get<PaginatedQuestsResponseDto>(cacheKey);
+    if (cached) {
+      return cached;
+    }
 
     const where: FindOptionsWhere<Quest> = {};
 
@@ -75,8 +101,6 @@ export class QuestsService {
         creatorAddress,
       });
     }
-
-
 
     const allowedSortFields = [
       'createdAt',
@@ -102,23 +126,46 @@ export class QuestsService {
 
     const [quests, total] = await queryBuilder.getManyAndCount();
 
-    return {
+    const result = {
       data: quests.map((quest) => QuestResponseDto.fromEntity(quest)),
       total,
       page,
       limit,
       totalPages: Math.ceil(total / limit),
     };
+
+    // Cache the result
+    await this.cacheService.set(
+      cacheKey,
+      result,
+      CACHE_TTL.MEDIUM * 1000,
+    );
+
+    return result;
   }
 
   async findOne(id: string): Promise<QuestResponseDto> {
+    const cacheKey = `${CACHE_KEYS.QUEST_DETAIL}:${id}`;
+
+    // Try to get from cache first
+    const cached =
+      await this.cacheService.get<QuestResponseDto>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const quest = await this.questRepository.findOne({ where: { id } });
 
     if (!quest) {
       throw new NotFoundException(`Quest with ID ${id} not found`);
     }
 
-    return QuestResponseDto.fromEntity(quest);
+    const result = QuestResponseDto.fromEntity(quest);
+
+    // Cache the result
+    await this.cacheService.set(cacheKey, result, CACHE_TTL.LONG * 1000);
+
+    return result;
   }
 
   async update(
@@ -149,6 +196,10 @@ export class QuestsService {
     Object.assign(quest, updateQuestDto);
     const updatedQuest = await this.questRepository.save(quest);
 
+    // Invalidate caches
+    await this.cacheService.deletePattern(CACHE_KEYS.QUESTS);
+    await this.cacheService.delete(`${CACHE_KEYS.QUEST_DETAIL}:${id}`);
+
     return QuestResponseDto.fromEntity(updatedQuest);
   }
 
@@ -164,6 +215,10 @@ export class QuestsService {
     }
 
     await this.questRepository.remove(quest);
+
+    // Invalidate caches
+    await this.cacheService.deletePattern(CACHE_KEYS.QUESTS);
+    await this.cacheService.delete(`${CACHE_KEYS.QUEST_DETAIL}:${id}`);
   }
 
   validateStatusTransition(

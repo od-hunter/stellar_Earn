@@ -31,12 +31,14 @@ import { AnalyticsSnapshot } from './modules/analytics/entities/analytics-snapsh
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { ErrorLoggerFilter } from './common/filter/error-logger.filter';
+import { CacheModule } from './modules/cache/cache.module';
 import { throttlerConfig } from './config/throttler.config';
 import { AppThrottlerGuard } from './common/guards/throttler.guard';
 
 @Module({
   imports: [
     WebhooksModule,
+    CacheModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
