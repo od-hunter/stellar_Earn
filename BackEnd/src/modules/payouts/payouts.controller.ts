@@ -10,7 +10,6 @@ import {
   HttpStatus,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { ThrottlerGuard } from '@nestjs/throttler';
 import {
   ApiTags,
   ApiOperation,
@@ -19,7 +18,7 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
+import { RateLimit } from '../../common/decorators/rate-limit.decorator';
 import { PayoutsService } from './payouts.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -37,14 +36,14 @@ import {
 
 @ApiTags('Payouts')
 @Controller('payouts')
-@UseGuards(JwtAuthGuard, ThrottlerGuard)
+@UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class PayoutsController {
   constructor(private readonly payoutsService: PayoutsService) {}
 
   @Post('claim')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @RateLimit({ limit: 10, ttlSeconds: 60 })
   @ApiOperation({ summary: 'Claim a pending payout' })
   @ApiResponse({
     status: 200,
