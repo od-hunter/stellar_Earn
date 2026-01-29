@@ -13,11 +13,11 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import type { AuthUser } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
+import { RateLimit } from '../../common/decorators/rate-limit.decorator';
 import {
   ChallengeRequestDto,
   ChallengeResponseDto,
@@ -34,7 +34,7 @@ export class AuthController {
 
   @Post('challenge')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @RateLimit({ name: 'auth', limit: 10 })
   @ApiOperation({ summary: 'Generate authentication challenge' })
   @ApiResponse({
     status: 200,
@@ -50,7 +50,7 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @RateLimit({ name: 'auth', limit: 5 })
   @ApiOperation({ summary: 'Login with Stellar wallet signature' })
   @ApiResponse({
     status: 200,
@@ -68,7 +68,7 @@ export class AuthController {
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @RateLimit({ name: 'auth', limit: 10 })
   @ApiOperation({ summary: 'Refresh access token' })
   @ApiResponse({
     status: 200,

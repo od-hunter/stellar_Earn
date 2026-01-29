@@ -1,6 +1,6 @@
-use soroban_sdk::{contracttype, Env, Symbol, Address, Vec};
-use crate::types::{Quest, Submission, UserStats, QuestStatus, SubmissionStatus};
 use crate::errors::Error;
+use crate::types::{Quest, QuestStatus, Submission, SubmissionStatus, UserStats};
+use soroban_sdk::{contracttype, Address, Env, Symbol, Vec};
 
 /// Storage key definitions for the contract's persistent data.
 ///
@@ -14,6 +14,8 @@ pub enum DataKey {
     Submission(Symbol, Address),
     /// Stores UserStats data, keyed by user address
     UserStats(Address),
+    /// Stores admin status, keyed by admin address
+    Admin(Address),
 }
 
 //================================================================================
@@ -71,7 +73,9 @@ pub fn get_quest(env: &Env, id: &Symbol) -> Result<Quest, Error> {
 /// * Overwrites existing quest data if the ID already exists
 /// * For partial updates, consider using specialized functions like `update_quest_status()`
 pub fn set_quest(env: &Env, id: &Symbol, quest: &Quest) {
-    env.storage().instance().set(&DataKey::Quest(id.clone()), quest);
+    env.storage()
+        .instance()
+        .set(&DataKey::Quest(id.clone()), quest);
 }
 
 //================================================================================
@@ -111,7 +115,11 @@ pub fn has_submission(env: &Env, quest_id: &Symbol, submitter: &Address) -> bool
 /// # Storage Access
 /// * Reads from: Instance storage
 /// * Gas Cost: Moderate
-pub fn get_submission(env: &Env, quest_id: &Symbol, submitter: &Address) -> Result<Submission, Error> {
+pub fn get_submission(
+    env: &Env,
+    quest_id: &Symbol,
+    submitter: &Address,
+) -> Result<Submission, Error> {
     env.storage()
         .instance()
         .get(&DataKey::Submission(quest_id.clone(), submitter.clone()))
@@ -134,9 +142,10 @@ pub fn get_submission(env: &Env, quest_id: &Symbol, submitter: &Address) -> Resu
 /// * Overwrites existing submission data if it already exists
 /// * For status updates only, consider using `update_submission_status()`
 pub fn set_submission(env: &Env, quest_id: &Symbol, submitter: &Address, submission: &Submission) {
-    env.storage()
-        .instance()
-        .set(&DataKey::Submission(quest_id.clone(), submitter.clone()), submission);
+    env.storage().instance().set(
+        &DataKey::Submission(quest_id.clone(), submitter.clone()),
+        submission,
+    );
 }
 
 //================================================================================
@@ -156,7 +165,9 @@ pub fn set_submission(env: &Env, quest_id: &Symbol, submitter: &Address, submiss
 /// * Reads from: Instance storage (existence check only)
 /// * Gas Cost: Low
 pub fn has_user_stats(env: &Env, user: &Address) -> bool {
-    env.storage().instance().has(&DataKey::UserStats(user.clone()))
+    env.storage()
+        .instance()
+        .has(&DataKey::UserStats(user.clone()))
 }
 
 /// Retrieves user stats from storage.
@@ -271,7 +282,9 @@ pub fn delete_submission(env: &Env, quest_id: &Symbol, submitter: &Address) {
 /// * Does not check if stats exist (safe to call on non-existent users)
 /// * Use with caution - this permanently removes all user reputation data
 pub fn delete_user_stats(env: &Env, user: &Address) {
-    env.storage().instance().remove(&DataKey::UserStats(user.clone()));
+    env.storage()
+        .instance()
+        .remove(&DataKey::UserStats(user.clone()));
 }
 
 //================================================================================
@@ -472,4 +485,44 @@ pub fn get_submission_if_exists(
     submitter: &Address,
 ) -> Option<Submission> {
     get_submission(env, quest_id, submitter).ok()
+}
+
+//================================================================================
+// Admin Storage Functions
+//================================================================================
+
+/// Checks if an address is an admin.
+///
+/// # Arguments
+/// * `env` - The contract environment
+/// * `address` - The address to check
+///
+/// # Returns
+/// * `true` if the address is an admin, `false` otherwise
+pub fn is_admin(env: &Env, address: &Address) -> bool {
+    env.storage()
+        .instance()
+        .has(&DataKey::Admin(address.clone()))
+}
+
+/// Sets an address as an admin.
+///
+/// # Arguments
+/// * `env` - The contract environment
+/// * `address` - The address to set as admin
+pub fn set_admin(env: &Env, address: &Address) {
+    env.storage()
+        .instance()
+        .set(&DataKey::Admin(address.clone()), &true);
+}
+
+/// Removes admin status from an address.
+///
+/// # Arguments
+/// * `env` - The contract environment
+/// * `address` - The address to remove admin status from
+pub fn remove_admin(env: &Env, address: &Address) {
+    env.storage()
+        .instance()
+        .remove(&DataKey::Admin(address.clone()));
 }

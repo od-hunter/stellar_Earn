@@ -1,11 +1,11 @@
 #![cfg(test)]
 
-use soroban_sdk::{testutils::Address as _, Address, Env, symbol_short, BytesN};
+use soroban_sdk::{symbol_short, testutils::Address as _, Address, BytesN, Env};
 
 extern crate earn_quest;
-use earn_quest::{EarnQuestContract, EarnQuestContractClient};
-use earn_quest::types::Badge;
 use earn_quest::storage;
+use earn_quest::types::Badge;
+use earn_quest::{EarnQuestContract, EarnQuestContractClient};
 
 //================================================================================
 // Test Setup
@@ -236,6 +236,9 @@ fn test_badge_storage() {
     let admin = Address::generate(&env);
     let user = Address::generate(&env);
 
+    // Initialize admin first
+    client.initialize(&admin);
+
     // Grant badge (stores user stats with badge)
     client.grant_badge(&admin, &user, &Badge::Rookie);
 
@@ -253,6 +256,9 @@ fn test_multiple_badges_storage() {
 
     let admin = Address::generate(&env);
     let user = Address::generate(&env);
+
+    // Initialize admin first
+    client.initialize(&admin);
 
     // Grant multiple badges
     client.grant_badge(&admin, &user, &Badge::Rookie);

@@ -12,7 +12,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
+import { RateLimit } from '../../common/decorators/rate-limit.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -34,7 +34,7 @@ import { UserRole } from '../users/entities/user.entity';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
 @ApiBearerAuth()
-@Throttle({ default: { limit: 30, ttl: 60000 } })
+@RateLimit({ limit: 30, ttlSeconds: 60 })
 export class AnalyticsController {
   constructor(
     private readonly platformAnalyticsService: PlatformAnalyticsService,
@@ -44,7 +44,7 @@ export class AnalyticsController {
 
   @Get('platform')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @RateLimit({ limit: 10, ttlSeconds: 60 })
   @ApiOperation({
     summary: 'Get platform-wide statistics',
     description:

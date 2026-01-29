@@ -1,21 +1,44 @@
 #![no_std]
 
-mod payout;
-pub mod storage;
-pub mod types;
+mod admin;
 pub mod errors;
 mod events;
+mod payout;
 mod reputation;
+pub mod storage;
+pub mod types;
 
-use soroban_sdk::{contract, contractimpl, Address, Env, Symbol, BytesN};
-use crate::types::{Quest, QuestStatus, Submission, SubmissionStatus, UserStats, Badge};
 use crate::errors::Error;
+use crate::types::{Badge, Quest, QuestStatus, Submission, SubmissionStatus, UserStats};
+use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, Symbol};
 
 #[contract]
 pub struct EarnQuestContract;
 
 #[contractimpl]
 impl EarnQuestContract {
+    /// Initialize the contract with an initial admin
+    pub fn initialize(env: Env, initial_admin: Address) -> Result<(), Error> {
+        initial_admin.require_auth();
+        storage::set_admin(&env, &initial_admin);
+        Ok(())
+    }
+
+    /// Add a new admin (admin only)
+    pub fn add_admin(env: Env, caller: Address, new_admin: Address) -> Result<(), Error> {
+        admin::add_admin(&env, &caller, &new_admin)
+    }
+
+    /// Remove an admin (admin only)
+    pub fn remove_admin(env: Env, caller: Address, admin_to_remove: Address) -> Result<(), Error> {
+        admin::remove_admin(&env, &caller, &admin_to_remove)
+    }
+
+    /// Check if an address is an admin
+    pub fn is_admin(env: Env, address: Address) -> bool {
+        admin::is_admin(&env, &address)
+    }
+
     /// Register a new quest
     pub fn register_quest(
         env: Env,
@@ -27,13 +50,13 @@ impl EarnQuestContract {
         deadline: u64,
     ) -> Result<(), Error> {
         creator.require_auth();
-        
+
         if storage::has_quest(&env, &id) {
             return Err(Error::QuestAlreadyExists);
         }
-        
+
         if reward_amount <= 0 {
-             return Err(Error::InvalidRewardAmount);
+            return Err(Error::InvalidRewardAmount);
         }
 
         let quest = Quest {
@@ -46,23 +69,23 @@ impl EarnQuestContract {
             status: QuestStatus::Active,
             total_claims: 0,
         };
-        
+
         storage::set_quest(&env, &id, &quest);
 
         // EMIT EVENT: QuestRegistered
         events::quest_registered(
-            &env, 
-            id, 
-            creator, 
-            reward_asset, 
-            reward_amount, 
-            verifier, 
-            deadline
+            &env,
+            id,
+            creator,
+            reward_asset,
+            reward_amount,
+            verifier,
+            deadline,
         );
 
         Ok(())
     }
-    
+
     /// Submit proof
     pub fn submit_proof(
         env: Env,
@@ -71,10 +94,10 @@ impl EarnQuestContract {
         proof_hash: BytesN<32>,
     ) -> Result<(), Error> {
         submitter.require_auth();
-        
+
         // Verify quest exists
         let _quest = storage::get_quest(&env, &quest_id)?;
-        
+
         let submission = Submission {
             quest_id: quest_id.clone(),
             submitter: submitter.clone(),
@@ -82,7 +105,7 @@ impl EarnQuestContract {
             status: SubmissionStatus::Pending,
             timestamp: env.ledger().timestamp(),
         };
-        
+
         storage::set_submission(&env, &quest_id, &submitter, &submission);
 
         // EMIT EVENT: ProofSubmitted
@@ -100,13 +123,13 @@ impl EarnQuestContract {
     ) -> Result<(), Error> {
         // Auth check
         verifier.require_auth();
-        
+
         let quest = storage::get_quest(&env, &quest_id)?;
-        
+
         if verifier != quest.verifier {
             return Err(Error::Unauthorized);
         }
-        
+
         let submission = storage::get_submission(&env, &quest_id, &submitter)?;
 
         // Only Pending can be approved
@@ -115,7 +138,7 @@ impl EarnQuestContract {
         }
 
         storage::update_submission_status(&env, &quest_id, &submitter, SubmissionStatus::Approved)?;
-        
+
         // EMIT EVENT: SubmissionApproved
         events::submission_approved(&env, quest_id, submitter, verifier);
 
@@ -123,11 +146,7 @@ impl EarnQuestContract {
     }
 
     /// Claim approved reward for a completed quest
-    pub fn claim_reward(
-        env: Env,
-        quest_id: Symbol,
-        submitter: Address,
-    ) -> Result<(), Error> {
+    pub fn claim_reward(env: Env, quest_id: Symbol, submitter: Address) -> Result<(), Error> {
         // 1. Auth
         submitter.require_auth();
 
@@ -145,12 +164,7 @@ impl EarnQuestContract {
 
         // 4. Payout
         // Logic handled in payout module (includes balance check)
-        payout::transfer_reward(
-            &env,
-            &quest.reward_asset,
-            &submitter,
-            quest.reward_amount
-        )?;
+        payout::transfer_reward(&env, &quest.reward_asset, &submitter, quest.reward_amount)?;
 
         // 5. State Update
         storage::update_submission_status(&env, &quest_id, &submitter, SubmissionStatus::Paid)?;
@@ -158,11 +172,11 @@ impl EarnQuestContract {
 
         // EMIT EVENT: RewardClaimed
         events::reward_claimed(
-            &env, 
-            quest_id.clone(), 
-            submitter.clone(), 
-            quest.reward_asset, 
-            quest.reward_amount
+            &env,
+            quest_id.clone(),
+            submitter.clone(),
+            quest.reward_asset,
+            quest.reward_amount,
         );
 
         // 6. Award XP for quest completion
@@ -177,12 +191,7 @@ impl EarnQuestContract {
     }
 
     /// Grant a badge to a user (admin only)
-    pub fn grant_badge(
-        env: Env,
-        admin: Address,
-        user: Address,
-        badge: Badge,
-    ) -> Result<(), Error> {
+    pub fn grant_badge(env: Env, admin: Address, user: Address, badge: Badge) -> Result<(), Error> {
         reputation::grant_badge(&env, &admin, &user, badge)
     }
 }
