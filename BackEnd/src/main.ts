@@ -39,11 +39,13 @@
 // }
 // bootstrap();
 
-
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { CustomValidationPipe } from './common/pipes/validation.pipe';
+import { SanitizationPipe } from './common/pipes/sanitization.pipe';
+import { ValidationExceptionFilter } from './common/filters/validation-exception.filter';
 
 // Catch all unhandled errors
 process.on('unhandledRejection', (reason, promise) => {
@@ -73,13 +75,31 @@ async function bootstrap() {
       credentials: true,
     });
 
+    // Global pipes for validation and sanitization
     app.useGlobalPipes(
+      new SanitizationPipe(),
+      new CustomValidationPipe(),
       new ValidationPipe({
         whitelist: true,
         forbidNonWhitelisted: true,
         transform: true,
+        disableErrorMessages: false,
+        exceptionFactory: (errors) => {
+          return new Error(
+            JSON.stringify({
+              message: 'Validation failed',
+              errors: errors.map((error) => ({
+                property: error.property,
+                constraints: error.constraints,
+              })),
+            }),
+          );
+        },
       }),
     );
+
+    // Global exception filter for validation errors
+    app.useGlobalFilters(new ValidationExceptionFilter());
 
     console.log('✅ Middleware configured');
 
@@ -105,7 +125,9 @@ async function bootstrap() {
     const server = await app.listen(port);
 
     console.log(`🎉 Application is running on: http://localhost:${port}`);
-    console.log(`📚 Swagger docs available at: http://localhost:${port}/api/docs`);
+    console.log(
+      `📚 Swagger docs available at: http://localhost:${port}/api/docs`,
+    );
 
     // Keep the process alive
     process.on('SIGTERM', () => {
@@ -123,7 +145,6 @@ async function bootstrap() {
         process.exit(0);
       });
     });
-
   } catch (error) {
     console.error('💥 Bootstrap failed:', error);
     console.error('Error stack:', error.stack);
@@ -132,7 +153,7 @@ async function bootstrap() {
 }
 
 // Start the application
-bootstrap().catch(error => {
+bootstrap().catch((error) => {
   console.error('💥 Fatal error during bootstrap:', error);
   process.exit(1);
 });

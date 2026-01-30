@@ -3,13 +3,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { DataSource } from 'typeorm';
-import { Notification as NotificationDB } from '../../src/modules/notifications/entities/notification.entity';
-
-enum NotificationType {
-  QUEST_UPDATE = 'quest_update',
-  REWARD = 'reward',
-  SUBMISSION = 'submission',
-}
+import { Notification as NotificationDB, NotificationType } from '../../src/modules/notifications/entities/notification.entity';
 
 describe('Notifications (e2e)', () => {
   let app: INestApplication;

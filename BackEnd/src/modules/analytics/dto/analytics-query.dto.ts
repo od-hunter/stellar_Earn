@@ -6,9 +6,10 @@ import {
   IsString,
   Min,
   Max,
+  ValidateIf,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum Granularity {
   DAY = 'day',
@@ -19,29 +20,27 @@ export enum Granularity {
 export class AnalyticsQueryDto {
   @IsOptional()
   @IsDateString()
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Start date for analytics query (ISO 8601 format)',
     example: '2024-01-01',
-    required: false,
   })
   startDate?: string;
 
   @IsOptional()
   @IsDateString()
-  @ApiProperty({
+  @ValidateIf((object: AnalyticsQueryDto) => !!object.startDate)
+  @ApiPropertyOptional({
     description: 'End date for analytics query (ISO 8601 format)',
     example: '2024-12-31',
-    required: false,
   })
   endDate?: string;
 
   @IsOptional()
   @IsEnum(Granularity)
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Time granularity for time-series data',
     enum: Granularity,
     default: Granularity.DAY,
-    required: false,
   })
   granularity?: Granularity = Granularity.DAY;
 }
