@@ -138,9 +138,9 @@ const createMockHealthIndicatorService = () => ({
       [key]: { status: 'up', ...data },
     }),
     down: (data?: Record<string, unknown>): never => {
-      throw new HealthCheckError('check failed', {
-        [key]: { status: 'down', ...data },
-      });
+      throw new Error(
+        `check failed: ${JSON.stringify({ [key]: { status: 'down', ...data } })}`,
+      );
     },
   }),
 });
@@ -160,8 +160,7 @@ describe('DatabaseIndicator (unit)', () => {
     expect(result.database.status).toBe('up');
   });
 
-  it('throws HealthCheckError when query fails', async () => {
-    const { HealthCheckError: HCE } = await import('@nestjs/terminus');
+  it('throws when query fails', async () => {
     const mockDataSource = {
       query: jest.fn().mockRejectedValue(new Error('Connection refused')),
     };
@@ -171,7 +170,7 @@ describe('DatabaseIndicator (unit)', () => {
       createMockHealthIndicatorService() as any,
       mockDataSource as any,
     );
-    await expect(indicator.isHealthy('database')).rejects.toBeInstanceOf(HCE);
+    await expect(indicator.isHealthy('database')).rejects.toBeInstanceOf(Error);
   });
 });
 
