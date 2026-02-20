@@ -3,6 +3,7 @@
 use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, Symbol};
 
 mod errors;
+mod init;
 mod payout;
 mod quest;
 mod reputation;
@@ -12,6 +13,7 @@ pub mod test;
 pub mod types;
 
 use errors::Error;
+use init::ContractConfig;
 use types::{Quest, Submission, UserStats};
 
 // Re-export types for use in tests
@@ -153,5 +155,50 @@ impl EarnQuestContract {
     /// Manually expire a quest (creator only)
     pub fn expire_quest(env: Env, quest_id: Symbol, caller: Address) -> Result<(), Error> {
         quest::expire_quest(&env, &quest_id, &caller)
+    }
+
+    /// Initialize the contract with admin setup
+    ///
+    /// This function must be called before any other contract functions.
+    /// It can only be called once. Subsequent calls will fail.
+    pub fn initialize(env: Env, admin: Address) -> Result<(), Error> {
+        init::initialize(&env, admin)
+    }
+
+    /// Get current contract configuration
+    pub fn get_config(env: Env) -> Result<ContractConfig, Error> {
+        init::get_config(&env)
+    }
+
+    /// Update contract configuration (admin only)
+    pub fn update_config(
+        env: Env,
+        admin: Address,
+        new_admin: Option<Address>,
+    ) -> Result<(), Error> {
+        init::update_config(&env, admin, new_admin)
+    }
+
+    /// Authorize contract upgrade (admin only)
+    ///
+    /// This function verifies that only the admin can authorize upgrades.
+    /// It does not perform the upgrade itself but validates the authorization.
+    pub fn authorize_upgrade(env: Env, admin: Address) -> Result<(), Error> {
+        init::authorize_upgrade(&env, admin)
+    }
+
+    /// Check if contract is initialized
+    pub fn is_initialized(env: Env) -> bool {
+        init::is_initialized(&env)
+    }
+
+    /// Get current contract version
+    pub fn get_version(env: Env) -> Result<u32, Error> {
+        init::get_version(&env)
+    }
+
+    /// Get the current admin address
+    pub fn get_admin(env: Env) -> Result<Address, Error> {
+        init::get_admin(&env)
     }
 }

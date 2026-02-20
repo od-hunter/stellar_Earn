@@ -25,4 +25,9 @@ pub enum Error {
     InvalidStatusTransition = 14,
     SubmissionAlreadyProcessed = 15,
     InvalidDeadline = 21,
+    AlreadyInitialized = 22,
+    NotInitialized = 23,
+    InvalidAdmin = 24,
+    UnauthorizedUpgrade = 25,
+    InvalidVersionNumber = 26,
 }

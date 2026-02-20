@@ -1,3 +1,4 @@
+use crate::init::ContractConfig;
 use crate::types::{Quest, Submission, UserStats};
 use soroban_sdk::{contracttype, Address, Env, Symbol};
 
@@ -11,6 +12,8 @@ pub enum StorageKey {
     Submission(Symbol, Address),
     /// User stats storage key
     UserStats(Address),
+    /// Contract configuration storage key
+    Config,
 }
 
 /// Store a quest
@@ -65,5 +68,22 @@ pub fn get_user_stats(env: &Env, address: &Address) -> Option<UserStats> {
 #[allow(dead_code)]
 pub fn has_user_stats(env: &Env, address: &Address) -> bool {
     let key = StorageKey::UserStats(address.clone());
+    env.storage().persistent().has(&key)
+}
+/// Store contract configuration
+pub fn set_config(env: &Env, config: &ContractConfig) {
+    let key = StorageKey::Config;
+    env.storage().persistent().set(&key, config);
+}
+
+/// Get contract configuration
+pub fn get_config(env: &Env) -> Option<ContractConfig> {
+    let key = StorageKey::Config;
+    env.storage().persistent().get(&key)
+}
+
+/// Check if contract is initialized
+pub fn is_initialized(env: &Env) -> bool {
+    let key = StorageKey::Config;
     env.storage().persistent().has(&key)
 }

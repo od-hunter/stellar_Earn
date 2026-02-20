@@ -12,6 +12,10 @@ Cargo.lock
 # Soroban
 .soroban/
 
+# Test snapshots (generated during testing)
+**/test_snapshots/
+test_snapshots/
+
 # IDEs
 .vscode/
 .idea/
