@@ -219,20 +219,12 @@ impl EarnQuestContract {
 
     /// Withdraw unclaimed escrow funds back to the quest creator.
     /// Only available after the quest is Completed, Expired, or Cancelled.
-    pub fn withdraw_unclaimed(
-        env: Env,
-        quest_id: Symbol,
-        creator: Address,
-    ) -> Result<i128, Error> {
+    pub fn withdraw_unclaimed(env: Env, quest_id: Symbol, creator: Address) -> Result<i128, Error> {
         escrow::withdraw_unclaimed(&env, &quest_id, &creator)
     }
 
     /// Cancel a quest (creator only). Sets status to Cancelled, allowing escrow withdrawal.
-    pub fn cancel_quest(
-        env: Env,
-        quest_id: Symbol,
-        creator: Address,
-    ) -> Result<(), Error> {
+    pub fn cancel_quest(env: Env, quest_id: Symbol, creator: Address) -> Result<(), Error> {
         quest::cancel_quest(&env, &quest_id, &creator)
     }
 }

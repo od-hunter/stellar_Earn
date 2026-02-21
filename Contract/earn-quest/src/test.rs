@@ -11,7 +11,9 @@ mod tests {
 
     fn setup_token(env: &Env) -> (Address, StellarAssetClient<'_>, TokenClient<'_>) {
         let admin = Address::generate(env);
-        let address = env.register_stellar_asset_contract_v2(admin.clone()).address();
+        let address = env
+            .register_stellar_asset_contract_v2(admin.clone())
+            .address();
         let admin_client = StellarAssetClient::new(env, &address);
         let client = TokenClient::new(env, &address);
         (address, admin_client, client)
@@ -109,8 +111,16 @@ mod tests {
         let quest_id = symbol_short!("QLIMIT");
 
         register_and_fund(
-            &env, &client, &quest_id, &creator, &token_address,
-            &token_admin_client, 1000, &verifier, 9999999999, 2,
+            &env,
+            &client,
+            &quest_id,
+            &creator,
+            &token_address,
+            &token_admin_client,
+            1000,
+            &verifier,
+            9999999999,
+            2,
         );
 
         for i in 1..=2 {
@@ -141,8 +151,16 @@ mod tests {
         let quest_id = symbol_short!("QFULL");
 
         register_and_fund(
-            &env, &client, &quest_id, &creator, &token_address,
-            &token_admin_client, 1000, &verifier, 9999999999, 1,
+            &env,
+            &client,
+            &quest_id,
+            &creator,
+            &token_address,
+            &token_admin_client,
+            1000,
+            &verifier,
+            9999999999,
+            1,
         );
 
         let submitter1 = Address::generate(&env);
@@ -170,8 +188,16 @@ mod tests {
         let quest_id = symbol_short!("QCOUNT");
 
         register_and_fund(
-            &env, &client, &quest_id, &creator, &token_address,
-            &token_admin_client, 500, &verifier, 9999999999, 5,
+            &env,
+            &client,
+            &quest_id,
+            &creator,
+            &token_address,
+            &token_admin_client,
+            500,
+            &verifier,
+            9999999999,
+            5,
         );
 
         let quest = client.get_quest(&quest_id);
@@ -203,8 +229,16 @@ mod tests {
         let quest_id = symbol_short!("QREP");
 
         register_and_fund(
-            &env, &client, &quest_id, &creator, &token_address,
-            &token_admin_client, 1000, &verifier, 9999999999, 10,
+            &env,
+            &client,
+            &quest_id,
+            &creator,
+            &token_address,
+            &token_admin_client,
+            1000,
+            &verifier,
+            9999999999,
+            10,
         );
 
         let proof = BytesN::from_array(&env, &[1u8; 32]);

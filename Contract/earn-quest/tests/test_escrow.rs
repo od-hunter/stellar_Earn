@@ -32,7 +32,9 @@ fn setup<'a>() -> TestContext<'a> {
     let verifier = Address::generate(&env);
 
     let token_admin = Address::generate(&env);
-    let token_address = env.register_stellar_asset_contract_v2(token_admin.clone()).address();
+    let token_address = env
+        .register_stellar_asset_contract_v2(token_admin.clone())
+        .address();
     let token_admin_client = StellarAssetClient::new(&env, &token_address);
     let token_client = TokenClient::new(&env, &token_address);
 
@@ -49,7 +51,12 @@ fn setup<'a>() -> TestContext<'a> {
     }
 }
 
-fn create_funded_quest(ctx: &TestContext, quest_id: soroban_sdk::Symbol, reward: i128, max_participants: u32) {
+fn create_funded_quest(
+    ctx: &TestContext,
+    quest_id: soroban_sdk::Symbol,
+    reward: i128,
+    max_participants: u32,
+) {
     let deadline = ctx.env.ledger().timestamp() + 86400;
     let total_escrow = reward * (max_participants as i128);
 
@@ -92,8 +99,7 @@ fn test_deposit_escrow_success() {
         &max_p,
     );
 
-    ctx.client
-        .deposit_escrow(&quest_id, &ctx.creator, &total);
+    ctx.client.deposit_escrow(&quest_id, &ctx.creator, &total);
 
     assert_eq!(ctx.client.get_escrow_balance(&quest_id), total);
     assert_eq!(ctx.token_client.balance(&ctx.creator), 0);
@@ -318,8 +324,7 @@ fn test_approve_fails_when_escrow_partially_depleted() {
     );
 
     // Only deposit enough for 1 payout
-    ctx.client
-        .deposit_escrow(&quest_id, &ctx.creator, &reward);
+    ctx.client.deposit_escrow(&quest_id, &ctx.creator, &reward);
 
     // First approval should succeed
     let sub1 = Address::generate(&ctx.env);
@@ -367,10 +372,7 @@ fn test_withdraw_unclaimed_after_completion() {
     let expected_remaining = total - (reward * 2);
     assert_eq!(withdrawn, expected_remaining);
     assert_eq!(ctx.client.get_escrow_balance(&quest_id), 0);
-    assert_eq!(
-        ctx.token_client.balance(&ctx.creator),
-        expected_remaining
-    );
+    assert_eq!(ctx.token_client.balance(&ctx.creator), expected_remaining);
 }
 
 #[test]
@@ -416,9 +418,7 @@ fn test_withdraw_active_quest_fails() {
 
     create_funded_quest(&ctx, quest_id.clone(), reward, 5);
 
-    let result = ctx
-        .client
-        .try_withdraw_unclaimed(&quest_id, &ctx.creator);
+    let result = ctx.client.try_withdraw_unclaimed(&quest_id, &ctx.creator);
     assert!(result.is_err());
 }
 
@@ -455,9 +455,7 @@ fn test_withdraw_zero_balance_fails() {
         .approve_submission(&quest_id, &submitter, &ctx.verifier);
 
     // Quest auto-completed, try to withdraw (balance is 0)
-    let result = ctx
-        .client
-        .try_withdraw_unclaimed(&quest_id, &ctx.creator);
+    let result = ctx.client.try_withdraw_unclaimed(&quest_id, &ctx.creator);
     assert!(result.is_err());
 }
 
@@ -472,9 +470,7 @@ fn test_double_withdraw_fails() {
 
     ctx.client.withdraw_unclaimed(&quest_id, &ctx.creator);
 
-    let result = ctx
-        .client
-        .try_withdraw_unclaimed(&quest_id, &ctx.creator);
+    let result = ctx.client.try_withdraw_unclaimed(&quest_id, &ctx.creator);
     assert!(result.is_err());
 }
 
@@ -701,8 +697,7 @@ fn test_deposit_on_paused_quest_succeeds() {
     ctx.client
         .update_quest_status(&quest_id, &ctx.creator, &QuestStatus::Paused);
 
-    ctx.client
-        .deposit_escrow(&quest_id, &ctx.creator, &5000);
+    ctx.client.deposit_escrow(&quest_id, &ctx.creator, &5000);
 
     assert_eq!(ctx.client.get_escrow_balance(&quest_id), 5000);
 }

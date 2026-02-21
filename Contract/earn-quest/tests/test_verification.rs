@@ -36,11 +36,20 @@ fn setup_env_with_token<'a>(
     let verifier = Address::generate(env);
 
     let token_admin = Address::generate(env);
-    let token_address = env.register_stellar_asset_contract_v2(token_admin.clone()).address();
+    let token_address = env
+        .register_stellar_asset_contract_v2(token_admin.clone())
+        .address();
     let token_admin_client = StellarAssetClient::new(env, &token_address);
     let token_client = TokenClient::new(env, &token_address);
 
-    (client, creator, verifier, token_address, token_admin_client, token_client)
+    (
+        client,
+        creator,
+        verifier,
+        token_address,
+        token_admin_client,
+        token_client,
+    )
 }
 
 fn setup_quest_with_submission<'a>(
@@ -86,8 +95,7 @@ fn test_approve_submission_success() {
     let env = Env::default();
     env.mock_all_auths();
 
-    let (client, _creator, verifier, _token_address, submitter) =
-        setup_quest_with_submission(&env);
+    let (client, _creator, verifier, _token_address, submitter) = setup_quest_with_submission(&env);
     let quest_id = symbol_short!("quest1");
 
     client.approve_submission(&quest_id, &submitter, &verifier);
@@ -101,8 +109,7 @@ fn test_reject_submission_success() {
     let env = Env::default();
     env.mock_all_auths();
 
-    let (client, _creator, verifier, _token_address, submitter) =
-        setup_quest_with_submission(&env);
+    let (client, _creator, verifier, _token_address, submitter) = setup_quest_with_submission(&env);
     let quest_id = symbol_short!("quest1");
 
     client.reject_submission(&quest_id, &submitter, &verifier);
@@ -169,8 +176,7 @@ fn test_double_approval_fails() {
     let env = Env::default();
     env.mock_all_auths();
 
-    let (client, _creator, verifier, _token_address, submitter) =
-        setup_quest_with_submission(&env);
+    let (client, _creator, verifier, _token_address, submitter) = setup_quest_with_submission(&env);
     let quest_id = symbol_short!("quest1");
 
     client.approve_submission(&quest_id, &submitter, &verifier);
@@ -184,8 +190,7 @@ fn test_reject_after_approval_fails() {
     let env = Env::default();
     env.mock_all_auths();
 
-    let (client, _creator, verifier, _token_address, submitter) =
-        setup_quest_with_submission(&env);
+    let (client, _creator, verifier, _token_address, submitter) = setup_quest_with_submission(&env);
     let quest_id = symbol_short!("quest1");
 
     client.approve_submission(&quest_id, &submitter, &verifier);
@@ -199,8 +204,7 @@ fn test_approve_after_rejection_fails() {
     let env = Env::default();
     env.mock_all_auths();
 
-    let (client, _creator, verifier, _token_address, submitter) =
-        setup_quest_with_submission(&env);
+    let (client, _creator, verifier, _token_address, submitter) = setup_quest_with_submission(&env);
     let quest_id = symbol_short!("quest1");
 
     client.reject_submission(&quest_id, &submitter, &verifier);

@@ -317,7 +317,9 @@ fn test_cannot_expire_completed_quest() {
     let verifier = Address::generate(&env);
 
     let token_admin = Address::generate(&env);
-    let token_address = env.register_stellar_asset_contract_v2(token_admin.clone()).address();
+    let token_address = env
+        .register_stellar_asset_contract_v2(token_admin.clone())
+        .address();
     let token_admin_client = StellarAssetClient::new(&env, &token_address);
 
     let quest_id = symbol_short!("quest11");

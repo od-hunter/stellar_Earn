@@ -6,7 +6,12 @@ use crate::types::QuestStatus;
 
 /// Deposit funds into escrow for a quest.
 /// The creator transfers tokens to the contract, which holds them until payout or withdrawal.
-pub fn deposit_escrow(env: &Env, quest_id: &Symbol, depositor: &Address, amount: i128) -> Result<(), Error> {
+pub fn deposit_escrow(
+    env: &Env,
+    quest_id: &Symbol,
+    depositor: &Address,
+    amount: i128,
+) -> Result<(), Error> {
     depositor.require_auth();
 
     if amount <= 0 {
@@ -50,11 +55,7 @@ pub fn validate_escrow_sufficient(
 }
 
 /// Deduct from escrow and transfer reward to the submitter
-pub fn process_payout(
-    env: &Env,
-    quest_id: &Symbol,
-    recipient: &Address,
-) -> Result<(), Error> {
+pub fn process_payout(env: &Env, quest_id: &Symbol, recipient: &Address) -> Result<(), Error> {
     let quest = storage::get_quest(env, quest_id).ok_or(Error::QuestNotFound)?;
 
     validate_escrow_sufficient(env, quest_id, quest.reward_amount)?;
@@ -76,11 +77,7 @@ pub fn process_payout(
 
 /// Withdraw unclaimed escrow funds back to the quest creator.
 /// Only allowed after the quest is Completed, Expired, or Cancelled.
-pub fn withdraw_unclaimed(
-    env: &Env,
-    quest_id: &Symbol,
-    creator: &Address,
-) -> Result<i128, Error> {
+pub fn withdraw_unclaimed(env: &Env, quest_id: &Symbol, creator: &Address) -> Result<i128, Error> {
     creator.require_auth();
 
     let quest = storage::get_quest(env, quest_id).ok_or(Error::QuestNotFound)?;
